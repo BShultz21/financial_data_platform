@@ -3,6 +3,7 @@ import requests
 from dotenv import load_dotenv
 import pyarrow as pa
 import pyarrow.parquet as pq
+import datetime as dt
 
 class HistoricalMarketDataHandler():
     def __init__(self):
@@ -23,10 +24,15 @@ class HistoricalMarketDataHandler():
 
     def write_to_parquet(self, data):
         table = pa.Table.from_pylist(data)
-        pq.write_table(table,'C:/Users/Braden/Documents/Python/financial_data_platform/result.parquet')
+        pq.write_table(table,'C:/Users/Braden/Documents/Python/financial_data_platform/storage/bronze/result.parquet')
 
 if __name__ == "__main__":
     handler = HistoricalMarketDataHandler()
     handler.load_api_key()
-    response = handler.call_api('aapl')
-    handler.write_to_parquet(response)
+    tickers = ['aapl', 'tsla']
+    bronze_data = []
+    for ticker in tickers:
+        response = handler.call_api(ticker)
+        retrieved_data = {'load_date': dt.date.today(), 'symbol': ticker, 'stock_data': response}
+        bronze_data.append(retrieved_data)
+    handler.write_to_parquet(bronze_data)
