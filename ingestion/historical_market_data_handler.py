@@ -14,6 +14,7 @@ class HistoricalMarketDataHandler():
         load_dotenv()
         self.api_key = os.getenv("TIINGO_KEY")
 
+
     def call_api(self, ticker):
         headers = {
             'Content-Type': 'application/json'
@@ -24,7 +25,7 @@ class HistoricalMarketDataHandler():
 
     def write_to_parquet(self, data):
         table = pa.Table.from_pylist(data)
-        pq.write_table(table,'C:/Users/Braden/Documents/Python/financial_data_platform/storage/bronze/result.parquet')
+        pq.write_table(table,'C:/Users/Braden/Documents/Python/financial_data_platform/storage/bronze/historical_stock_data.parquet')
 
 if __name__ == "__main__":
     handler = HistoricalMarketDataHandler()
@@ -33,6 +34,6 @@ if __name__ == "__main__":
     bronze_data = []
     for ticker in tickers:
         response = handler.call_api(ticker)
-        retrieved_data = {'load_date': dt.date.today(), 'symbol': ticker, 'stock_data': response}
+        retrieved_data = {'load_date': dt.date.today(), 'symbol': ticker, 'api_data': response}
         bronze_data.append(retrieved_data)
     handler.write_to_parquet(bronze_data)
