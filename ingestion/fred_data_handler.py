@@ -9,7 +9,6 @@ import datetime as dt
 class FredDataHandler():
     def __init__(self):
         self.api_key = None
-        self.series = ['DRCCLACBS', 'CPIAUCSL', 'UNRATE', 'MORTGAGE30US', 'TOTALSL', 'TDSP']
         self.url = None
 
     def load_api_key(self):
@@ -32,11 +31,11 @@ class FredDataHandler():
 if __name__ == '__main__':
     handler = FredDataHandler()
     handler.load_api_key()
-    metrics = ['DRCCLACBS', 'CPIAUCSL', 'UNRATE', 'MORTGAGE30US', 'TOTALSL', 'TDSP']
+    metrics = ['DRCCLACBS', 'CPIAUCSL', 'UNRATE', 'MORTGAGE30US', 'TOTALSL', 'TDSP', 'DGS10', 'DGS30', 'DGS2', 'DGS5','DGS3MO',
+               'DFII5', 'DFII7', 'DFII10', 'DFII20', 'DFII30']
     bronze_data = []
     for metric in metrics:
         api_response = handler.call_api(metric)
         retrieved_data = {'load_date': dt.date.today(), 'metric': metric, 'api_data': api_response}
         bronze_data.append(retrieved_data)
-    print(bronze_data[0])
     handler.write_to_parquet(bronze_data)
