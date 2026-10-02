@@ -6,7 +6,7 @@ import pyarrow.parquet as pq
 import datetime as dt
 
 
-class FredDataHandler():
+class FredDataHandler:
     def __init__(self):
         self.api_key = None
         self.url = None

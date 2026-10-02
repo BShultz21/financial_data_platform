@@ -26,7 +26,7 @@ class SECDataHandler:
 if __name__ == '__main__':
     data_handler = SECDataHandler()
     data_handler.load_user_agent_credentials()
-    CIKs = ['0000320193', '0000019617','0000789019','0000070858','0001018724']
+    CIKs = ['0000320193','0000019617','0000789019','0000070858','0001018724']
     bronze_data = []
     for CIK in CIKs:
         api_response = data_handler.call_api(CIK)
