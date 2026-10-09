@@ -38,19 +38,42 @@ def sec_bronze_to_silver_transformation():
         ")"
     )
     rows = []
+    bad_data = []
     for element in data_list:
         for ConceptFact,Data in element['api_data'].items():
-            try:
-                for DataKey,DataValue in Data['units'].items():
-                    for item in DataValue:
-                        row = []
-                        row = [element['load_date'], element['cik'], ConceptFact, item.get('start'), item.get('end'),
-                               item.get('val'), item.get('accn'), item.get('fy'), item.get('fp'), item.get('form'),
-                               item.get('filed'), item.get('frame')]
-                        rows.append(row)
-            except TypeError:
-                print(list(data_list[0]['api_data'].keys()))
-                break
+            units = Data.get('units') if isinstance(Data, dict) else None
+            if not units:
+                rows.append((
+                    str(element['load_date']), element['cik'], 'us-gaap', ConceptFact, None,
+                    None, None, None,
+                    None, None, None,
+                    None, None, None,
+                ))
+                continue
+            for unit, items in units.items():
+                if not items:
+                    rows.append((
+                        str(element['load_date']), element['cik'], 'us-gaap', ConceptFact, unit,
+                        None, None, None,
+                        None, None, None,
+                        None, None, None,
+                    ))
+                    continue
+                for item in items:
+                    rows.append((
+                        str(element['load_date']), element['cik'], 'us-gaap', ConceptFact, unit,
+                        str(item.get('start')), str(item.get('end')), item.get('val'),
+                        item.get('accn'), item.get('fy'), item.get('fp'),
+                        item.get('form'), item.get('filed'), item.get('frame'),
+                    ))
+    headers = ['load_date', 'cik', 'taxonomy', 'conceptfact', 'unit', 'start_date', 'end_date',
+               'value', 'accountnum', 'fy', 'fp', 'form', 'filed', 'frame']
+    with open("output.txt", 'w') as f:
+        f.write(','.join(headers))
+        f.write('\n')
+        for tup in rows:
+            f.write(str(tup))
+            f.write("\n")
 
 def delete_db_tables():
     """
