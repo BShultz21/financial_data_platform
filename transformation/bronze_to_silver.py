@@ -78,6 +78,7 @@ def sec_bronze_to_silver_transformation():
     table = pa.Table.from_pylist(rows)
     pq.write_table(table, f'{directory_root}/storage/silver/historical_sec_data.parquet')
     return None
+
 def row_count_check(raw_checksum, silver_checksum):
     "Compares row count from raw api data (pre-transformation) and row count post transformation"
     if raw_checksum[1] != silver_checksum[1]:

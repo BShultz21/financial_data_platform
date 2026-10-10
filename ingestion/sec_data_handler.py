@@ -23,9 +23,9 @@ class SECDataHandler:
         table = pa.Table.from_pylist(data)
         pq.write_table(table,'C:/Users/Braden/Documents/Python/financial_data_platform/storage/bronze/sec_data.parquet')
 
-    def row_counter(self, api_reponse):
+    def row_counter(self, api_response):
         row_count = 0
-        for ConceptFact,Data in api_reponse.items():
+        for ConceptFact,Data in api_response.items():
             units = Data.get('units') if isinstance(Data, dict) else None
             if units is None:
                 continue
