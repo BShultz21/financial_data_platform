@@ -23,13 +23,25 @@ class SECDataHandler:
         table = pa.Table.from_pylist(data)
         pq.write_table(table,'C:/Users/Braden/Documents/Python/financial_data_platform/storage/bronze/sec_data.parquet')
 
+    def row_counter(self, api_reponse):
+        row_count = 0
+        for ConceptFact,Data in api_reponse.items():
+            units = Data.get('units') if isinstance(Data, dict) else None
+            if units is None:
+                continue
+            for unit, item in units.items():
+                row_count += len(item or [])
+        return row_count
+
 if __name__ == '__main__':
     data_handler = SECDataHandler()
     data_handler.load_user_agent_credentials()
-    CIKs = ['0000320193', '0000019617', '0000789019', '0000070858', '0001018724']
+    CIKs = ['0000320193', '0000019617','0000789019','0000070858', '0001018724']
     bronze_data = []
     for CIK in CIKs:
         api_response = data_handler.call_api(CIK)
-        retrieved_data = {'load_date': dt.date.today(), 'cik': CIK, 'api_data': api_response}
+        row_count = data_handler.row_counter(api_response)
+        retrieved_data = {'load_date': dt.date.today(), 'cik': CIK, 'api_data': api_response,
+                          'row_count': row_count}
         bronze_data.append(retrieved_data)
     data_handler.write_to_parquet(bronze_data)

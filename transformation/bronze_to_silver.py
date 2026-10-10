@@ -1,6 +1,7 @@
 from pathlib import Path
 import pyarrow.parquet as pq
 import duckdb
+import pyarrow as pa
 
 directory_root = str(Path(__file__).parent.parent)
 
@@ -38,42 +39,52 @@ def sec_bronze_to_silver_transformation():
         ")"
     )
     rows = []
-    bad_data = []
+    row_count_checksum = []
     for element in data_list:
+        row_count = 0
         for ConceptFact,Data in element['api_data'].items():
             units = Data.get('units') if isinstance(Data, dict) else None
             if not units:
-                rows.append((
-                    str(element['load_date']), element['cik'], 'us-gaap', ConceptFact, None,
-                    None, None, None,
-                    None, None, None,
-                    None, None, None,
-                ))
                 continue
             for unit, items in units.items():
                 if not items:
-                    rows.append((
-                        str(element['load_date']), element['cik'], 'us-gaap', ConceptFact, unit,
-                        None, None, None,
-                        None, None, None,
-                        None, None, None,
-                    ))
                     continue
                 for item in items:
-                    rows.append((
-                        str(element['load_date']), element['cik'], 'us-gaap', ConceptFact, unit,
-                        str(item.get('start')), str(item.get('end')), item.get('val'),
-                        item.get('accn'), item.get('fy'), item.get('fp'),
-                        item.get('form'), item.get('filed'), item.get('frame'),
-                    ))
-    headers = ['load_date', 'cik', 'taxonomy', 'conceptfact', 'unit', 'start_date', 'end_date',
-               'value', 'accountnum', 'fy', 'fp', 'form', 'filed', 'frame']
-    with open("output.txt", 'w') as f:
-        f.write(','.join(headers))
-        f.write('\n')
-        for tup in rows:
-            f.write(str(tup))
-            f.write("\n")
+                    rows.append({
+                        "load_date": element['load_date'],
+                        "cik": element['cik'],
+                        "taxonomy": 'us-gaap',
+                        "conceptfact": ConceptFact,
+                        "unit": unit,
+                        "start_date": item.get('start'),
+                        "end_date": item.get('end'),
+                        "value": item.get('val'),
+                        "accountnum": item.get('accn'),
+                        "fy": item.get('fy'),
+                        "fp": item.get('fp'),
+                        "form": item.get('form'),
+                        "filed": item.get('filed'),
+                        "frame": item.get('frame'),
+                    })
+                    row_count += 1
+        row_count_checksum.append((element['cik'], row_count))
+
+    for i in range(len(data_list)):
+        raw_checksum = data_list[i]['cik'], data_list[i]['row_count']
+        silver_checksum = row_count_checksum[i][0], row_count_checksum[i][1]
+        if not row_count_check(raw_checksum, silver_checksum):
+            return False
+
+    table = pa.Table.from_pylist(rows)
+    pq.write_table(table, f'{directory_root}/storage/silver/historical_sec_data.parquet')
+    return None
+def row_count_check(raw_checksum, silver_checksum):
+    "Compares row count from raw api data (pre-transformation) and row count post transformation"
+    if raw_checksum[1] != silver_checksum[1]:
+        print(f"CIK{raw_checksum[0]} does not match, raw row count shows {raw_checksum[1]} and"
+              f"silver row count shows {silver_checksum[1]}")
+        return False
+    return True
 
 def delete_db_tables():
     """
@@ -81,9 +92,10 @@ def delete_db_tables():
     """
     duckdb.sql("DROP TABLE IF EXISTS bronze_fred_table;")
     duckdb.sql("DROP TABLE IF EXISTS bronze_historical_market_table;")
+    duckdb.sql("DROP TABLE IF EXISTS bronze_historical_sec_table;")
 
 if __name__ == '__main__':
     #fred_bronze_to_silver_transformation()
     #historical_market_bronze_to_silver_transformation()
     sec_bronze_to_silver_transformation()
-    #delete_db_tables()
+    delete_db_tables()
