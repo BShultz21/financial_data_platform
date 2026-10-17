@@ -20,24 +20,7 @@ def historical_market_bronze_to_silver_transformation():
 def sec_bronze_to_silver_transformation():
     path = directory_root + '/storage/bronze/sec_data.parquet'
     table = pq.read_table(path)
-    data_list = table.to_pylist()
-
-    duckdb.sql(
-        "CREATE TABLE bronze_historical_sec_table ("
-        "load_date DATE, "
-        "cik BIGINT, "
-        "concept VARCHAR, "
-        "start_date DATE, "
-        "end_date DATE, "
-        "value DOUBLE, "
-        "accn VARCHAR, "
-        "fy INTEGER, "
-        "fp VARCHAR, "
-        "form VARCHAR, "
-        "filed DATE, "
-        "frame VARCHAR"
-        ")"
-    )
+    data_list = table.to_pylist()   
     rows = []
     row_count_checksum = []
     for element in data_list:
