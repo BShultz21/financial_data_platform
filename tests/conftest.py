@@ -2,7 +2,7 @@ import pytest
 
 @pytest.fixture
 def sec_data():
-    return [{"load_date": "2026-10-18",
+    return [{"load_date": "2026-10-19",
         "cik": "0000019617",
          "api_data":
             {"AffordableHousingTaxCreditsAndOtherTaxBenefitsAmount":
@@ -68,7 +68,7 @@ def sec_data():
                         "fp": "Q2",
                         "form": "10-Q",
                         "filed": "2011-08-05"}]}}}},
-            {"load_date": "2026-10-18",
+            {"load_date": "2026-10-19",
              "cik": "0000320193",
              "api_data":
                  {

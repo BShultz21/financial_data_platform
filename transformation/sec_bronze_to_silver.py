@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 import pyarrow.parquet as pq
 import duckdb
@@ -15,6 +16,11 @@ def write_silver(rows) -> int:
     pq.write_table(table, f'{directory_root}/storage/silver/historical_sec_data.parquet')
     return len(rows)
 
+def convert_date_datatype(date):
+    time_format_string = '%Y-%m-%d'
+    date = datetime.strptime(date, time_format_string)
+    return date
+
 def flatten_element(element) -> tuple:
     row_count = 0
     element_data = []
@@ -27,7 +33,7 @@ def flatten_element(element) -> tuple:
                 continue
             for item in items:
                 element_data.append({
-                    "load_date": element['load_date'],
+                    "load_date": convert_date_datatype(element['load_date']),
                     "cik": element['cik'],
                     "taxonomy": 'us-gaap',
                     "conceptfact": ConceptFact,
@@ -84,4 +90,4 @@ if __name__ == '__main__':
     #historical_market_bronze_to_silver_transformation()
     sec_bronze_to_silver_transformation()
 
-    print(duckdb.sql(f"SELECT count(*) FROM '{directory_root}/storage/silver/historical_sec_data.parquet'"))
+    print(duckdb.sql(f"SELECT load_date FROM '{directory_root}/storage/silver/historical_sec_data.parquet'"))

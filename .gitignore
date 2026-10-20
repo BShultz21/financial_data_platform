@@ -1,4 +1,5 @@
 .idea/
 *.env
 storage/
-transformation/output.txt
+transformation/__pycache__/
+tests/__pycache__/

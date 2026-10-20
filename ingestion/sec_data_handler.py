@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import pyarrow as pa
 import pyarrow.parquet as pq
 import datetime as dt
-import json
+
 
 class SECDataHandler:
     def __init__(self):
