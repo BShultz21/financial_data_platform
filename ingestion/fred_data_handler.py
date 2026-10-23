@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import pyarrow as pa
 import pyarrow.parquet as pq
 import datetime as dt
+from pathlib import Path
 
 
 class FredDataHandler:
@@ -22,11 +23,13 @@ class FredDataHandler:
     def call_api(self, series):
         self.set_url(series)
         response = requests.get(self.url)
-        return response.json()
+        if response.status_code != 200:
+            raise requests.HTTPError
+        return response
 
-    def write_to_parquet(self, data):
+    def write_to_parquet(self, data, file_path):
         table = pa.Table.from_pylist(data)
-        pq.write_table(table,'C:/Users/Braden/Documents/Python/financial_data_platform/storage/bronze/fred_data.parquet')
+        pq.write_table(table,file_path)
 
 if __name__ == '__main__':
     handler = FredDataHandler()
@@ -36,6 +39,7 @@ if __name__ == '__main__':
     bronze_data = []
     for metric in metrics:
         api_response = handler.call_api(metric)
-        retrieved_data = {'load_date': dt.date.today(), 'metric': metric, 'api_data': api_response}
+        retrieved_data = {'load_date': dt.date.today(), 'metric': metric, 'api_data': api_response.json()}
         bronze_data.append(retrieved_data)
-    handler.write_to_parquet(bronze_data)
+    file_path = Path(str(Path(__file__).parent.parent) + '/storage/bronze/fred_data.parquet')
+    handler.write_to_parquet(bronze_data, file_path)

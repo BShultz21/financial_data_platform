@@ -3,3 +3,4 @@
 storage/
 transformation/__pycache__/
 tests/__pycache__/
+ingestion/__pycache__/

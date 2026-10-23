@@ -1,4 +1,6 @@
 import pytest
+from transformation import market_bronze_to_silver as mkt_transformation
+from ingestion import historical_market_data_handler as mkt
 
 @pytest.fixture
 def sec_data():
@@ -114,3 +116,82 @@ def sec_data():
                                      "filed": "2013-04-24",
                                      "frame": "CY2010"}]}}}}
             ]
+@pytest.fixture()
+def market_data():
+    return [{
+        'load_date': '2026-10-22',
+        'symbol': 'aapl',
+        'api_data': [{'date': '2026-10-15T00:00:00.000Z',
+                     'close': 342.0,
+                     'high': 347.85,
+                     'low': 341.6,
+                     'open': 346.95,
+                     'volume': 39767256,
+                     'adjClose': 342.0,
+                     'adjHigh': 347.85,
+                     'adjLow': 341.6,
+                     'adjOpen': 346.95,
+                     'adjVolume': 39767256,
+                     'divCash': 0.0,
+                     'splitFactor': 1.0},
+                    {'date': '2026-10-16T00:00:00.000Z',
+                     'close': 343.46,
+                     'high': 347.82,
+                     'low': 340.46,
+                     'open': 346.085,
+                     'volume': 59946368,
+                     'adjClose': 343.46,
+                     'adjHigh': 347.82,
+                     'adjLow': 340.46,
+                     'adjOpen': 346.085,
+                     'adjVolume': 59946368,
+                     'divCash': 0.0,
+                     'splitFactor': 1.0}]},
+        {'load_date': '2026-10-22',
+        'symbol': 'aapl',
+         'api_data':[{'date': '2026-10-15T00:00:00.000Z',
+                      'close': 539.44,
+                      'high': 541.1331,
+                      'low': 531.22,
+                      'open': 533.315,
+                      'volume': 24151211,
+                      'adjClose': 539.44,
+                      'adjHigh': 541.1331,
+                      'adjLow': 531.22,
+                      'adjOpen': 533.315,
+                      'adjVolume': 24151211,
+                      'divCash': 0.0,
+                      'splitFactor': 1.0},
+                     {'date': '2026-10-16T00:00:00.000Z',
+                      'close': 529.05,
+                      'high': 543.82,
+                      'low': 524.43,
+                      'open': 541.31,
+                      'volume': 24845667,
+                      'adjClose': 529.05,
+                      'adjHigh': 543.82,
+                      'adjLow': 524.43,
+                      'adjOpen': 541.31,
+                      'adjVolume': 24845667,
+                      'divCash': 0.0,
+                      'splitFactor': 1.0}]}]
+
+@pytest.fixture()
+def bronze_market_data_parquet(tmp_path, market_data):
+    path = tmp_path / "storage" / "bronze" / "historical_market_data.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handler = mkt.HistoricalMarketDataHandler()
+    handler.write_to_parquet(market_data,path)
+
+@pytest.fixture()
+def bronze_market_data_sql_table(tmp_path, bronze_market_data_parquet):
+    path = tmp_path / "storage" / "bronze" / "historical_market_data.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mkt_transformation.create_bronze_level_table(path)
+
+@pytest.fixture()
+def silver_market_parquet(tmp_path, bronze_market_data_sql_table):
+    path = tmp_path / "storage" / "silver" / "historical_market_data.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    mkt_transformation.create_silver_parquet_file(path)

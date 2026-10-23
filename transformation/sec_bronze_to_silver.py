@@ -17,9 +17,11 @@ def write_silver(rows) -> int:
     return len(rows)
 
 def convert_date_datatype(date):
-    time_format_string = '%Y-%m-%d'
-    date = datetime.strptime(date, time_format_string)
-    return date
+    if date:
+        time_format_string = '%Y-%m-%d'
+        date = datetime.strptime(date, time_format_string)
+        return date
+    return None
 
 def flatten_element(element) -> tuple:
     row_count = 0
@@ -38,14 +40,14 @@ def flatten_element(element) -> tuple:
                     "taxonomy": 'us-gaap',
                     "conceptfact": ConceptFact,
                     "unit": unit,
-                    "start_date": item.get('start'),
-                    "end_date": item.get('end'),
-                    "value": item.get('val'),
+                    "start_date": convert_date_datatype(item.get('start')),
+                    "end_date": convert_date_datatype(item.get('end')),
+                    "value": float(item.get('val')),
                     "accountnum": item.get('accn'),
                     "fy": item.get('fy'),
                     "fp": item.get('fp'),
                     "form": item.get('form'),
-                    "filed": item.get('filed'),
+                    "filed": convert_date_datatype(item.get('filed')),
                     "frame": item.get('frame'),
                 })
                 row_count += 1
