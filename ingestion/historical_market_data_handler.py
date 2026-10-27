@@ -6,7 +6,7 @@ import pyarrow.parquet as pq
 import datetime as dt
 from pathlib import Path
 
-class HistoricalMarketDataHandler():
+class HistoricalMarketDataHandler:
     def __init__(self):
         self.api_key = None
         self.url = None
