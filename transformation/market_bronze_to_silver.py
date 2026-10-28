@@ -3,14 +3,40 @@ import duckdb
 
 directory_root = str(Path(__file__).parent.parent)
 
-def create_bronze_level_market_table(data_path):
-    duckdb.sql(F"CREATE OR REPLACE TABLE bronze_historical_market_table AS SELECT * FROM '{data_path}'")
+def create_bronze_historical_market_table(data_path):
+    duckdb.sql(F"CREATE OR REPLACE TABLE bronze_historical_market AS SELECT * FROM '{data_path}'")
     return None
 
+def create_bronze_live_market_table(data_path):
+    duckdb.sql(F"CREATE OR REPLACE TABLE bronze_live_market AS SELECT * FROM '{data_path}'")
+    return None
 
-def create_silver_market_parquet(output_path):
+def create_silver_live_market_parquet(output_path):
     duckdb.sql("COPY("
-               "WITH UNNEST_DATA AS ((SELECT * EXCLUDE(api_data), unnest(api_data, recursive := true) FROM bronze_historical_market_table))"
+               "WITH UNNEST_DATA AS ((SELECT * EXCLUDE(api_data), unnest(api_data, recursive := true) FROM bronze_live_market))"
+               ",DATA_TYPE_CONVERSION AS ("
+                       "SELECT CAST(load_date AS TIMESTAMP) as load_date, "
+                             "CAST(ticker AS VARCHAR) as ticker, "
+                             "CAST(timestamp AS TIMESTAMP) as timestamp,"
+                             "CAST(open AS DOUBLE) as open_price,"
+                             "CAST(high as DOUBLE) as high_price,"
+                             "CAST(low AS DOUBLE) as low_price,"
+                             "CAST(tngoLast AS DOUBLE) as tngoLast, "
+                             "CAST(prevClose AS DOUBLE) as prevClose ,"
+                             "CAST(prevDate AS DATE) as prevDate, "
+                             "CAST(volume AS DOUBLE) as volume, "
+                             "CAST(lqSpread AS DOUBLE) as lqSpread, "
+                             "CAST(lqBidPrice AS DOUBLE) as lqBidPrice, "
+                             "CAST(lqBidSize AS INT) as lqBidSize, "
+                             "CAST(lqRefPrice AS DOUBLE) as lqRefPrice,"
+                             "CAST(lqAskPrice AS DOUBLE) as lqAskPrice, "
+                             "CAST(lqAskSize AS DOUBLE) as lqAskSize"
+                             " FROM UNNEST_DATA)"
+                     f" SELECT * FROM DATA_TYPE_CONVERSION QUALIFY ROW_NUMBER() OVER (PARTITION BY ticker, timestamp ORDER BY load_date DESC) = 1) TO '{output_path}'")
+
+def create_silver_historical_market_parquet(output_path):
+    duckdb.sql("COPY("
+               "WITH UNNEST_DATA AS ((SELECT * EXCLUDE(api_data), unnest(api_data, recursive := true) FROM bronze_historical_market))"
                ",DATA_TYPE_CONVERSION AS ("
                        "SELECT CAST(load_date AS TIMESTAMP) as load_date, "
                              "CAST(symbol AS VARCHAR) as symbol, "
@@ -30,7 +56,3 @@ def create_silver_market_parquet(output_path):
                              " FROM UNNEST_DATA)"
                      f" SELECT * FROM DATA_TYPE_CONVERSION QUALIFY ROW_NUMBER() OVER (PARTITION BY symbol, trade_date ORDER BY load_date DESC) = 1) TO '{output_path}'")
     return None
-
-if __name__ == '__main__':
-    create_bronze_level_market_table(directory_root + '/storage/bronze/historical_market_data.parquet')
-    path = directory_root + "/storage/silver/historical_market_data.parquet"

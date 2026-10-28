@@ -1,6 +1,6 @@
 import pytest
 from transformation import market_bronze_to_silver as mkt_transformation
-from ingestion import historical_market_data_handler as mkt
+from ingestion import market_data_handler as mkt
 from ingestion import fred_data_handler as fred
 from transformation import fred_bronze_to_silver as fred_transformation
 import datetime
@@ -120,7 +120,7 @@ def sec_data():
                                      "frame": "CY2010"}]}}}}
             ]
 @pytest.fixture()
-def market_data():
+def historical_market_data():
     return [{
         'load_date': '2026-10-22',
         'symbol': 'aapl',
@@ -180,27 +180,27 @@ def market_data():
                       'splitFactor': 1.0}]}]
 
 @pytest.fixture()
-def bronze_market_data_parquet(tmp_path, market_data):
+def bronze_historical_market_data_parquet(tmp_path, historical_market_data):
     path = tmp_path / "storage" / "bronze" / "historical_market_data.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
-    handler = mkt.HistoricalMarketDataHandler()
-    handler.write_to_parquet(market_data,path)
+    handler = mkt.MarketDataHandler()
+    handler.write_to_parquet(historical_market_data,path)
 
 @pytest.fixture()
-def bronze_market_data_sql_table(tmp_path, bronze_market_data_parquet):
+def bronze_historical_market_data_sql_table(tmp_path, bronze_historical_market_data_parquet):
     path = tmp_path / "storage" / "bronze" / "historical_market_data.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
-    mkt_transformation.create_bronze_level_market_table(path)
+    mkt_transformation.create_bronze_historical_market_table(path)
 
 @pytest.fixture()
-def silver_market_parquet(tmp_path, bronze_market_data_sql_table):
+def silver_historical_market_parquet(tmp_path, bronze_historical_market_data_sql_table):
     path = tmp_path / "storage" / "silver" / "historical_market_data.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    mkt_transformation.create_silver_market_parquet(path)
+    mkt_transformation.create_silver_historical_market_parquet(path)
 
 @pytest.fixture()
-def duplicate_market_data():
+def duplicate_historical_market_data():
     return [{
         'load_date': '2026-10-22',
         'symbol': 'aapl',
@@ -273,24 +273,62 @@ def duplicate_market_data():
                        'splitFactor': 1.0}]}]
 
 @pytest.fixture()
-def duplicate_bronze_market_data_parquet(tmp_path, duplicate_market_data):
+def duplicate_historical_bronze_market_data_parquet(tmp_path, duplicate_historical_market_data):
     path = tmp_path / "storage" / "bronze" / "historical_market_data.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
-    handler = mkt.HistoricalMarketDataHandler()
-    handler.write_to_parquet(duplicate_market_data,path)
+    handler = mkt.MarketDataHandler()
+    handler.write_to_parquet(duplicate_historical_market_data,path)
 
 @pytest.fixture()
-def duplicate_bronze_market_data_sql_table(tmp_path, duplicate_bronze_market_data_parquet):
+def duplicate_historical_bronze_market_data_sql_table(tmp_path, duplicate_historical_bronze_market_data_parquet):
     path = tmp_path / "storage" / "bronze" / "historical_market_data.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
-    mkt_transformation.create_bronze_level_market_table(path)
+    mkt_transformation.create_bronze_historical_market_table(path)
 
 @pytest.fixture()
-def duplicate_silver_market_parquet(tmp_path, duplicate_bronze_market_data_sql_table):
+def duplicate_historical_silver_market_parquet(tmp_path, duplicate_historical_bronze_market_data_sql_table):
     path = tmp_path / "storage" / "silver" / "historical_market_data.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    mkt_transformation.create_silver_market_parquet(path)
+    mkt_transformation.create_silver_historical_market_parquet(path)
+
+@pytest.fixture()
+def live_market_data():
+    return [{'load_date': '2026-10-27 23:27:34.844330+00:00', 'api_data':
+                {'ticker': 'AAPL', 'timestamp': '2026-10-27T19:29:01.895754416-04:00', 'open': 343.28, 'high': 347.78,
+                 'low': 342.1, 'tngoLast': 347.4, 'prevClose': 343.91, 'prevDate': '2026-10-26', 'volume': 1380718.0,
+                 'lqSpread': 0.001929, 'lqBidPrice': 347.095, 'lqBidSize': 100, 'lqRefPrice': 347.4,
+                 'lqAskPrice': 347.765, 'lqAskSize': 5880}},
+            {'load_date': '2026-10-27 23:27:34.844330+00:00', 'api_data':
+                {'ticker': 'MSFT', 'timestamp': '2026-10-27T19:28:43.256750104-04:00', 'open': 531.42, 'high': 534.7,
+                 'low': 527.78, 'tngoLast': 533.0, 'prevClose': 532.6, 'prevDate': '2026-10-26', 'volume': 664803.0,
+                 'lqSpread': 0.001765, 'lqBidPrice': 532.36, 'lqBidSize': 720, 'lqRefPrice': 533.0, 'lqAskPrice': 533.3,
+                 'lqAskSize': 100}},
+            {'load_date': '2026-10-27 23:27:34.844330+00:00', 'api_data':
+                {'ticker': 'JPM', 'timestamp': '2026-10-27T19:10:56.221549435-04:00', 'open': 334.52, 'high': 337.29,
+                 'low': 334.015, 'tngoLast': 336.75, 'prevClose': 334.04, 'prevDate': '2026-10-26', 'volume': 145853.0,
+                 'lqSpread': 0.007424, 'lqBidPrice': 335.62, 'lqBidSize': 920, 'lqRefPrice': 336.75,
+                 'lqAskPrice': 338.12, 'lqAskSize': 60}}]
+
+@pytest.fixture()
+def bronze_live_market_data_parquet(tmp_path, live_market_data):
+    path = tmp_path / "storage" / "bronze" / "live_market_data.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handler = mkt.MarketDataHandler()
+    handler.write_to_parquet(live_market_data,path)
+
+@pytest.fixture()
+def bronze_live_market_data_sql_table(tmp_path, bronze_live_market_data_parquet):
+    path = tmp_path / "storage" / "bronze" / "live_market_data.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mkt_transformation.create_bronze_live_market_table(path)
+
+@pytest.fixture()
+def silver_live_market_parquet(tmp_path, bronze_live_market_data_sql_table):
+    path = tmp_path / "storage" / "silver" / "live_market_data.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    mkt_transformation.create_silver_live_market_parquet(path)
 
 @pytest.fixture()
 def fred_data():
