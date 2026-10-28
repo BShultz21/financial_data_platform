@@ -7,6 +7,9 @@ import pyarrow.parquet as pq
 import datetime as dt
 from pathlib import Path
 
+from transformation.fred_bronze_to_silver import directory_root
+
+
 class MarketDataHandler:
     def __init__(self):
         self.api_key = None
@@ -39,20 +42,21 @@ class MarketDataHandler:
             raise requests.HTTPError
         return response
 
-    def add_metadata_to_live_data(self, data):
+    def add_metadata(self, data):
         compiled_data = []
+        timestamp = datetime.datetime.now(datetime.timezone.utc)
         for item in data:
-            row = [{'load_date': datetime.datetime.now(datetime.timezone.utc), 'api_data': item}]
+            row = [{'load_date': timestamp.strftime('%Y-%m-%d %H:%M'),
+                    'api_data': item}]
             compiled_data.extend(row)
-        print(compiled_data)
+
+        return compiled_data
 
     def write_to_parquet(self, data, file_path):
         if type(data) is list:
             table = pa.Table.from_pylist(data)
-            pq.write_table(table,file_path)
-        elif type(data) is dict:
-            table = pa.Table.from_pydict(data)
-            pq.write_table(table, file_path)
+            pq.write_to_dataset(table, file_path, partition_cols=['load_date'],
+                                existing_data_behavior="delete_matching")
         else:
             raise TypeError
 
@@ -62,12 +66,13 @@ if __name__ == "__main__":
     tickers = ['aapl', 'msft', 'jpm']
     bronze_data = []
     response = handler.get_data(tickers)
-    handler.add_metadata_to_live_data(response.json())
-    """
+    data = handler.add_metadata(response.json())
+    output_path = directory_root + "/storage/bronze/live_market/"
+    handler.write_to_parquet(data, output_path)
+
     for ticker in tickers:
-        response = handler.call_api(ticker)
-        retrieved_data = {'load_date': dt.date.today(), 'symbol': ticker, 'api_data': response.json()}
-        bronze_data.append(retrieved_data)
-    file_path = Path(str(Path(__file__).parent.parent) + '/storage/bronze/historical_market_data.parquet')
-    handler.write_to_parquet(bronze_data, file_path)
-    """
+        response = handler.get_historical_data(ticker)
+        bronze_data.append(response.json())
+    historical_data = handler.add_metadata(bronze_data)
+    file_path = Path(str(Path(__file__).parent.parent) + '/storage/bronze/historical_market/')
+    handler.write_to_parquet(historical_data, file_path)

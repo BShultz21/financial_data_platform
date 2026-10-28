@@ -20,6 +20,17 @@ class SECDataHandler:
         response = requests.get(self.url, headers=self.headers)
         return response.json()['facts']['us-gaap']
 
+    def add_metadata(self, data):
+        compiled_data = []
+        timestamp = dt.datetime.now(dt.timezone.utc)
+        for item in data:
+            row = [{'load_date': timestamp.strftime('%Y-%m-%d %H'),
+                    'api_data': item}]
+            compiled_data.append(row)
+
+        print(compiled_data)
+        return compiled_data
+
     def write_to_parquet(self, data):
         table = pa.Table.from_pylist(data)
         pq.write_table(table,'C:/Users/Braden/Documents/Python/financial_data_platform/storage/bronze/sec_data.parquet')
@@ -42,7 +53,6 @@ if __name__ == '__main__':
     for CIK in CIKs:
         api_response = data_handler.call_api(CIK)
         row_count = data_handler.row_counter(api_response)
-        retrieved_data = {'load_date': dt.date.today(), 'cik': CIK, 'api_data': api_response,
-                          'row_count': row_count}
-        bronze_data.append(retrieved_data)
-    data_handler.write_to_parquet(bronze_data)
+        bronze_data.append(api_response)
+    compiled_data = data_handler.add_metadata(bronze_data)
+    data_handler.write_to_parquet(compiled_data)

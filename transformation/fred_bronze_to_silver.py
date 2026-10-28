@@ -1,6 +1,8 @@
 from pathlib import Path
 import duckdb
 
+from transformation.sec_bronze_to_silver import directory_root
+
 directory_root = str(Path(__file__).parent.parent)
 
 def create_bronze_level_fred_table(data_path):
@@ -27,7 +29,14 @@ def create_silver_layer_fred_parquet(output_path):
                "CAST (UNNEST_CTE2.offset as INT) as 'offset',"
                "CAST (UNNEST_CTE2.limit as BIGINT) as 'limit',"
                "CAST (date as DATE) as observation_date,"
-               "CAST (value as DOUBLE) as value"
+               "TRY_CAST (value as DOUBLE) as value"
                " FROM UNNEST_CTE2"
                " QUALIFY ROW_NUMBER() OVER (PARTITION BY metric, date ORDER BY load_date DESC) = 1)"
-               f" TO '{output_path}'")
+               f" TO '{output_path}' (FORMAT parquet)")
+
+
+if __name__ == '__main__':
+   path = directory_root+ "/storage/bronze/fred/load_date=2026-10-28/d3c54975af3f4a16944f749c9e200ffe-0.parquet"
+   create_bronze_level_fred_table(path)
+   output_path = directory_root + "/storage/silver/fred/data.parquet"
+   create_silver_layer_fred_parquet(output_path)

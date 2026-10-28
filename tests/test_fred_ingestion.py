@@ -16,11 +16,12 @@ def test_bad_fred_api_call():
         handler.call_api('adfsd')
 
 def test_fred_write_to_bronze_parquet(tmp_path,fred_data):
-    path = tmp_path / "storage" / "bronze" / "fred_data.parquet"
-    path.parent.mkdir(parents=True, exist_ok=True)
+    write_path = tmp_path / "storage" / "bronze" / "fred"
+    write_path.parent.mkdir(parents=True, exist_ok=True)
     handler = fred.FredDataHandler()
-    handler.write_to_parquet(fred_data, path)
+    handler.write_to_parquet(fred_data, write_path)
 
-    assert path.is_file()
-    table = pq.read_table(path)
+    file_path = sorted(write_path.glob("load_date=2026-10-27/*.parquet"))
+    assert file_path[0].is_file()
+    table = pq.read_table(file_path)
     assert table.num_rows == len(fred_data)

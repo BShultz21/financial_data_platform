@@ -29,27 +29,25 @@ class FredDataHandler:
             raise requests.HTTPError
         return response
 
-    def get_release_dates(self):
-        response = requests.get(f"https://api.stlouisfed.org/fred/releases/dates?api_key={self.api_key}&file_type=json")
-        return response
-
     def write_to_parquet(self, data, file_path):
-        table = pa.Table.from_pylist(data)
-        pq.write_table(table,file_path)
+        if type(data) is list:
+            table = pa.Table.from_pylist(data)
+            pq.write_to_dataset(table, file_path, partition_cols=['load_date'],
+                                existing_data_behavior="delete_matching")
+        else:
+            raise TypeError
 
 if __name__ == '__main__':
     handler = FredDataHandler()
     handler.load_api_key()
-    """
     metrics = ['DRCCLACBS', 'CPIAUCSL', 'UNRATE', 'MORTGAGE30US']
     bronze_data = []
     for metric in metrics:
         api_response = handler.call_api(metric)
         retrieved_data = {'load_date': dt.date.today(), 'metric': metric, 'api_data': api_response.json()}
         bronze_data.append(retrieved_data)
-    file_path = Path(str(Path(__file__).parent.parent) + '/storage/bronze/fred_data.parquet')
+    file_path = Path(str(Path(__file__).parent.parent) + '/storage/bronze/fred/')
     handler.write_to_parquet(bronze_data, file_path)
-    """
-    response = handler.get_release_dates()
-    print(response.json())
+
+
 
