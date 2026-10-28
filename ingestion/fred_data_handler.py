@@ -1,4 +1,6 @@
 import os
+from idlelib.rpc import request_queue
+
 import requests
 from dotenv import load_dotenv
 import pyarrow as pa
@@ -27,6 +29,10 @@ class FredDataHandler:
             raise requests.HTTPError
         return response
 
+    def get_release_dates(self):
+        response = requests.get(f"https://api.stlouisfed.org/fred/releases/dates?api_key={self.api_key}&file_type=json")
+        return response
+
     def write_to_parquet(self, data, file_path):
         table = pa.Table.from_pylist(data)
         pq.write_table(table,file_path)
@@ -34,6 +40,7 @@ class FredDataHandler:
 if __name__ == '__main__':
     handler = FredDataHandler()
     handler.load_api_key()
+    """
     metrics = ['DRCCLACBS', 'CPIAUCSL', 'UNRATE', 'MORTGAGE30US']
     bronze_data = []
     for metric in metrics:
@@ -42,3 +49,7 @@ if __name__ == '__main__':
         bronze_data.append(retrieved_data)
     file_path = Path(str(Path(__file__).parent.parent) + '/storage/bronze/fred_data.parquet')
     handler.write_to_parquet(bronze_data, file_path)
+    """
+    response = handler.get_release_dates()
+    print(response.json())
+
